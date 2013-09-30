@@ -1,7 +1,10 @@
 package isucon2
 
 import (
+	"bufio"
 	"fmt"
+	"log"
+	"os"
 )
 
 type DbConfig struct {
@@ -21,4 +24,20 @@ func (db *DbConfig) String() string {
 		db.Port,
 		db.DbName,
 	)
+}
+
+func InitDb() {
+	log.Println("Initializing database")
+	f, err := os.Open(Conf.dir + "database/initial_data.sql")
+	if err != nil {
+		log.Panic(err.Error())
+	}
+	s := bufio.NewScanner(f)
+	for s.Scan() {
+		Db.Exec(s.Text())
+	}
+
+	if err := s.Err(); err != nil {
+		log.Panic(err.Error())
+	}
 }

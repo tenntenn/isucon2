@@ -11,7 +11,7 @@ type Sold struct {
 	AritistName   string
 }
 
-func GetRecentSold() []Sold {
+func GetRecentSold() []*Sold {
 	rows, err := Db.Query(`
 SELECT stock.seat_id, variation.name AS v_name, ticket.name AS t_name, artist.name AS a_name FROM stock
         JOIN variation ON stock.variation_id = variation.id
@@ -26,12 +26,12 @@ SELECT stock.seat_id, variation.name AS v_name, ticket.name AS t_name, artist.na
 
 	var seatId int
 	var vName, tName, aName string
-	solds := []Sold{}
+	solds := []*Sold{}
 	for rows.Next() {
 		if err := rows.Scan(&seatId, &vName, &tName, &aName); err != nil {
 			log.Panic(err.Error())
 		}
-		solds = append(solds, Sold{seatId, vName, tName, aName})
+		solds = append(solds, &Sold{seatId, vName, tName, aName})
 	}
 
 	if err := rows.Err(); err != nil {

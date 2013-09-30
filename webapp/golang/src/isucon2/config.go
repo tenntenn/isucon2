@@ -7,7 +7,8 @@ import (
 )
 
 type Config struct {
-	Db *DbConfig `json:"database"`
+	dir string    `json:"-"`
+	Db  *DbConfig `json:"database"`
 }
 
 func LoadConfig(dir string) *Config {
@@ -26,5 +27,6 @@ func LoadConfig(dir string) *Config {
 		panic(err)
 	}
 
+	c.dir = dir
 	return &c
 }
