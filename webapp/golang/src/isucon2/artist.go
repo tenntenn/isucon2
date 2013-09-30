@@ -9,6 +9,24 @@ type Artist struct {
 	Name string
 }
 
+func GetArtist(artistId int) *Artist {
+	row, err := Db.QueryRow(
+		"SELECT id, name FROM artist WHERE id = ? LIMIT 1",
+		artistId,
+	)
+	if err != nil {
+		log.Panic(err.Error())
+	}
+
+	var id int
+	var name string
+	if err := row.Scan(&id, &name); err != nil {
+		log.Panic(err.Error())
+	}
+
+	return &Artist{id, name}
+}
+
 func GetAllArtist() []*Artist {
 	rows, err := Db.Query("SELECT * FROM artist")
 	if err != nil {
