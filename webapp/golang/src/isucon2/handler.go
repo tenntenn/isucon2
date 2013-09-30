@@ -3,6 +3,7 @@ package isucon2
 import (
 	"html/template"
 	"net/http"
+	"strconv"
 )
 
 var (
