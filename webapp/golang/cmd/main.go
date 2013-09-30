@@ -23,6 +23,7 @@ func main() {
 	defer isucon2.Db.Close()
 
 	http.HandleFunc("/", isucon2.TopPageHandler)
+	http.HandleFunc("/buy", isucon2.BuyHandler)
 	http.Handle("/css/", http.FileServer(http.Dir("static")))
 	http.Handle("/images/", http.FileServer(http.Dir("static")))
 	http.Handle("/js/", http.FileServer(http.Dir("static")))
