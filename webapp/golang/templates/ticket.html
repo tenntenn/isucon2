@@ -1,0 +1,33 @@
+{{define "content"}}
+<h2>{{ .Ticket.ArtistName }} : {{ .Ticket.Name }}</h2>
+<ul>
+    {{range .Variations }}
+<li class="variation">
+  <form method="POST" action="/buy">
+    <input type="hidden" name="ticket_id" value="{{ .Ticket.Id }}">
+    <input type="hidden" name="variation_id" value="{{ .Id }}">
+    <span class="variation_name">{{ .Name }}</span> 残り<span class="vacancy" id="vacancy_{{ .Id }}">{{ .Vacancy }}</span>席
+    <input type="text" name="member_id" value="">
+    <input type="submit" value="購入">
+  </form>
+</li>
+    {{end}}
+</ul>
+
+<h3>席状況</h3>
+{{range .Variations}}
+{% set stock = variation.stock %}
+<h4>{{ .Name }}</h4>
+<table class="seats" data-variationid="{{ .Id }}">
+    {% for row in range(64) %}
+  <tr>
+      {% for col in range(64) %}
+      {% set key = "%02d-%02d" % (row, col) %}
+    <td id="{{ key }}" class="{% if stock[key] %}unavailable{% else %}available{% endif %}"></td>
+      {% endfor %}
+  </tr>
+    {% endfor %}
+</table>
+{{end}}
+
+{{end}}
