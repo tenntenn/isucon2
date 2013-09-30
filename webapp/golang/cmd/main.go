@@ -15,7 +15,6 @@ func init() {
 func main() {
 	isucon2.Conf = isucon2.LoadConfig("../config/")
 
-	// TODO: これじゃたぶんダメ
 	var err error
 	isucon2.Db, err = sql.Open("mysql", isucon2.Conf.Db.String())
 	if err != nil {
