@@ -10,13 +10,10 @@ type Artist struct {
 }
 
 func GetArtist(artistId int) *Artist {
-	row, err := Db.QueryRow(
+	row := Db.QueryRow(
 		"SELECT id, name FROM artist WHERE id = ? LIMIT 1",
 		artistId,
 	)
-	if err != nil {
-		log.Panic(err.Error())
-	}
 
 	var id int
 	var name string

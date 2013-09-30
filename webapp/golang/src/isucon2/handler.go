@@ -2,6 +2,7 @@ package isucon2
 
 import (
 	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -27,11 +28,11 @@ func TopPageHandler(w http.ResponseWriter, r *http.Request) {
 func artistHandler(w http.ResponseWriter, r *http.Request) {
 	artistId, err := strconv.ParseInt(r.FormValue("artist_id"), 10, 64)
 	if err != nil {
-		log.Panic("Invalid artist_id:", artist_id)
+		log.Panicf("Invalid artist_id: %d", artistId)
 	}
 
 	data := map[string]interface{}{
-		"Artists": GetArtist(artistId),
+		"Artists": GetArtist(int(artistId)),
 	}
 	artistTmpl.ExecuteTemplate(w, "layout", data)
 }
