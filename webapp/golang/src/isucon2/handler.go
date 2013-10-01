@@ -2,6 +2,7 @@ package isucon2
 
 import (
 	"database/sql"
+	"encoding/csv"
 	"html/template"
 	"log"
 	"net/http"
@@ -13,6 +14,7 @@ var (
 	artistTmpl   = parseTemplate("artist")
 	completeTmpl = parseTemplate("complete")
 	soldoutTmpl  = parseTemplate("soldout")
+	adminTmpl    = parseTemplate("admin")
 )
 
 func parseTemplate(name string) *template.Template {
@@ -69,4 +71,28 @@ func BuyHandler(w http.ResponseWriter, r *http.Request) {
 
 	tx.Commit()
 	completeTmpl.ExecuteTemplate(w, "layout", stock)
+}
+
+func AdminHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		// InitDB
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+
+	adminTmpl.ExecuteTemplate(w, "layout", nil)
+}
+
+func AdminCsvHandler(w http.ResponseWriter, r *http.Request) {
+	wr := csv.NewWriter(w)
+	for _, order := range GetAllOrder() {
+		err := wr.Write(
+			order.Id,
+			order.MemberId,
+		)
+		if err != nil {
+			log.Panic(err.Error())
+		}
+	}
+	w.Header().Set("Content-type", "text/csv")
 }
