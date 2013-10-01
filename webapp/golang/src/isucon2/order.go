@@ -3,6 +3,7 @@ package isucon2
 import (
 	"database/sql"
 	"log"
+	"time"
 )
 
 type Order struct {
@@ -22,10 +23,10 @@ func NewOrder(tx *sql.Tx, memberId string) *Order {
 		log.Panic(err.Error())
 	}
 
-	return &Order{int(id), memberId}
+	return &Order{int(id), memberId, nil}
 }
 
-func GetAllOrder() *[]Order {
+func GetAllOrder() []*Order {
 	rows, err := Db.Query(`
   SELECT
     order_request.*, stock.id, stock.seat_id, stock.variation_id, stock.updated_at
@@ -57,8 +58,8 @@ func GetAllOrder() *[]Order {
 
 	for rows.Next() {
 		rows.Scan(&oid, &memberId, &sid, &seatId, &variationId, &updatedAt)
-		stock := &Stock{sid, variationId, seatId, orderId, updatedAt}
-		orders = append(orders, &Order{&oid, &memberId, stock})
+		stock := &Stock{sid, variationId, seatId, oid, updatedAt}
+		orders = append(orders, &Order{oid, memberId, stock})
 	}
 
 	if err := rows.Err(); err != nil {

@@ -23,9 +23,10 @@ func main() {
 	defer isucon2.Db.Close()
 
 	http.HandleFunc("/", isucon2.TopPageHandler)
-	http.HandleFunc("/artist", isucon2.ArtistHandler)
+	http.HandleFunc("/artist/", isucon2.ArtistHandler)
 	http.HandleFunc("/buy", isucon2.BuyHandler)
 	http.HandleFunc("/admin", isucon2.AdminHandler)
+	http.HandleFunc("/admin/order.csv", isucon2.AdminCsvHandler)
 	http.Handle("/css/", http.FileServer(http.Dir("static")))
 	http.Handle("/images/", http.FileServer(http.Dir("static")))
 	http.Handle("/js/", http.FileServer(http.Dir("static")))
