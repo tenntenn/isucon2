@@ -427,7 +427,7 @@ func adminCsvHandler(w http.ResponseWriter, r *http.Request) {
 		rows.Scan(&oid, &memberId, &seatId, &variationId, &updatedAt)
 		order := Data{
 			"Id":                oid,
-			"memberId":          memberId,
+			"MemberId":          memberId,
 			"Stock.VariationId": variationId,
 			"Stock.SeatId":      seatId,
 			"Stock.UpdatedAt":   updatedAt,
@@ -446,7 +446,7 @@ func adminCsvHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Sprintf("%s", order["MemberId"]),
 			fmt.Sprintf("%s", order["Stock.SeatId"]),
 			fmt.Sprintf("%d", order["Stock.VariationId"]),
-			fmt.Sprintf("%s", order["Stock.UpdatedAt"]),
+			fmt.Sprintf("%s", fmt.Sprintf("%s", order["Stock.UpdatedAt"])),
 		})
 		if err != nil {
 			log.Panic(err.Error())
