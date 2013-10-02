@@ -1,10 +1,11 @@
 {{define "content"}}
 <h2>{{ .Ticket.ArtistName }} : {{ .Ticket.Name }}</h2>
 <ul>
+  {{$ticketId := .Ticket.Id}}
     {{range .Variations }}
 <li class="variation">
   <form method="POST" action="/buy">
-    <input type="hidden" name="ticket_id" value="{{ .Ticket.Id }}">
+    <input type="hidden" name="ticket_id" value="{{ $ticketId }}">
     <input type="hidden" name="variation_id" value="{{ .Id }}">
     <span class="variation_name">{{ .Name }}</span> 残り<span class="vacancy" id="vacancy_{{ .Id }}">{{ .Vacancy }}</span>席
     <input type="text" name="member_id" value="">
@@ -15,18 +16,19 @@
 </ul>
 
 <h3>席状況</h3>
+{{$rowcol := .RowCol}}
 {{range .Variations}}
-{% set stock = variation.stock %}
+{{$stock := .Stock}}
 <h4>{{ .Name }}</h4>
 <table class="seats" data-variationid="{{ .Id }}">
-    {% for row in range(64) %}
+    {{range $row := $rowcol}}
   <tr>
-      {% for col in range(64) %}
-      {% set key = "%02d-%02d" % (row, col) %}
-    <td id="{{ key }}" class="{% if stock[key] %}unavailable{% else %}available{% endif %}"></td>
-      {% endfor %}
+      {{range $col := $rowcol}}
+      {{$key := printf "%02d-%02d" $row $col}}
+      <td id="{{ $key }}" class="{{ if index $stock $key }}unavailable{{ else }}available{{ end }}"></td>
+      {{end}}
   </tr>
-    {% endfor %}
+  {{end}}
 </table>
 {{end}}
 
