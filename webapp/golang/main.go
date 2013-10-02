@@ -6,14 +6,13 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
-
-	_ "github.com/go-sql-driver/mysql"
-	"os"
 	"time"
 )
 
@@ -60,10 +59,6 @@ func loadConfig() *Config {
 }
 
 func initDb() {
-	cnn := <-cnnPool
-	defer func() {
-		cnnPool <- cnn
-	}()
 	log.Println("Initializing database")
 	f, err := os.Open("../config/database/initial_data.sql")
 	if err != nil {
@@ -71,7 +66,7 @@ func initDb() {
 	}
 	s := bufio.NewScanner(f)
 	for s.Scan() {
-		cnn.Exec(s.Text())
+		db.Exec(s.Text())
 	}
 
 	if err := s.Err(); err != nil {
@@ -84,8 +79,8 @@ func init() {
 }
 
 var (
-	config  = loadConfig()
-	cnnPool chan *sql.DB
+	config = loadConfig()
+	db     *sql.DB
 )
 
 var (
@@ -111,12 +106,7 @@ func parseTemplate(name string) *template.Template {
 type Data map[string]interface{}
 
 func getRecentSold() []Data {
-	cnn := <-cnnPool
-	defer func() {
-		cnnPool <- cnn
-	}()
-
-	rows, err := cnn.Query(`
+	rows, err := db.Query(`
 SELECT stock.seat_id, variation.name AS v_name, ticket.name AS t_name, artist.name AS a_name FROM stock
         JOIN variation ON stock.variation_id = variation.id
         JOIN ticket ON variation.ticket_id = ticket.id
@@ -151,12 +141,7 @@ SELECT stock.seat_id, variation.name AS v_name, ticket.name AS t_name, artist.na
 }
 
 func topPageHandler(w http.ResponseWriter, r *http.Request) {
-	cnn := <-cnnPool
-	defer func() {
-		cnnPool <- cnn
-	}()
-
-	rows, err := cnn.Query("SELECT * FROM artist")
+	rows, err := db.Query("SELECT * FROM artist")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -181,11 +166,6 @@ func topPageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func artistHandler(w http.ResponseWriter, r *http.Request) {
-	cnn := <-cnnPool
-	defer func() {
-		cnnPool <- cnn
-	}()
-
 	artistId, err := getId(r.RequestURI)
 	if err != nil {
 		log.Fatal(err)
@@ -195,10 +175,10 @@ func artistHandler(w http.ResponseWriter, r *http.Request) {
 		aid   int
 		aname string
 	)
-	err = cnn.QueryRow("SELECT id, name FROM artist WHERE id = ? LIMIT 1", artistId).Scan(&aid, &aname)
+	err = db.QueryRow("SELECT id, name FROM artist WHERE id = ? LIMIT 1", artistId).Scan(&aid, &aname)
 
 	var rows *sql.Rows
-	rows, err = cnn.Query("SELECT id, name FROM ticket WHERE artist_id = ?", artistId)
+	rows, err = db.Query("SELECT id, name FROM ticket WHERE artist_id = ?", artistId)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -211,7 +191,7 @@ func artistHandler(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 		var count int
-		err = cnn.QueryRow(`
+		err = db.QueryRow(`
             SELECT COUNT(*) AS cnt FROM variation                     
             INNER JOIN stock ON stock.variation_id = variation.id    
             WHERE variation.ticket_id = ? AND stock.order_id IS NULL`,
@@ -233,12 +213,6 @@ func artistHandler(w http.ResponseWriter, r *http.Request) {
 var rowcol = make([]int, 64)
 
 func ticketHandler(w http.ResponseWriter, r *http.Request) {
-
-	cnn := <-cnnPool
-	defer func() {
-		cnnPool <- cnn
-	}()
-
 	ticketId, err := getId(r.RequestURI)
 	if err != nil {
 		log.Fatal(err)
@@ -248,7 +222,7 @@ func ticketHandler(w http.ResponseWriter, r *http.Request) {
 		tid, aid     int
 		tname, aname string
 	)
-	err = cnn.QueryRow("SELECT t.*, a.name AS artist_name FROM ticket t INNER JOIN artist a ON t.artist_id = a.id WHERE t.id = ? LIMIT 1", ticketId).Scan(&tid, &tname, &aid, &aname)
+	err = db.QueryRow("SELECT t.*, a.name AS artist_name FROM ticket t INNER JOIN artist a ON t.artist_id = a.id WHERE t.id = ? LIMIT 1", ticketId).Scan(&tid, &tname, &aid, &aname)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -256,7 +230,7 @@ func ticketHandler(w http.ResponseWriter, r *http.Request) {
 	ticket := Data{"Id": tid, "Name": tname, "ArtistId": aid, "ArtistName": aname}
 
 	var rows *sql.Rows
-	rows, err = cnn.Query("SELECT id, name FROM variation WHERE ticket_id = ?", tid)
+	rows, err = db.Query("SELECT id, name FROM variation WHERE ticket_id = ?", tid)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -270,7 +244,7 @@ func ticketHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var rows2 *sql.Rows
-		rows2, err = cnn.Query("SELECT seat_id, order_id FROM stock WHERE variation_id = ?", id)
+		rows2, err = db.Query("SELECT seat_id, order_id FROM stock WHERE variation_id = ?", id)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -292,7 +266,7 @@ func ticketHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var vacancy int
-		err = cnn.QueryRow(`
+		err = db.QueryRow(`
         SELECT COUNT(*) AS cunt FROM stock WHERE variation_id = ? AND
          order_id IS NULL`, id).Scan(&vacancy)
 		if err != nil {
@@ -320,11 +294,6 @@ func buyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cnn := <-cnnPool
-	defer func() {
-		cnnPool <- cnn
-	}()
-
 	variationId, err := strconv.ParseInt(r.FormValue("variation_id"), 10, 64)
 	if err != nil {
 		log.Fatal(err)
@@ -332,7 +301,7 @@ func buyHandler(w http.ResponseWriter, r *http.Request) {
 	memberId := r.FormValue("member_id")
 
 	var tx *sql.Tx
-	tx, err = cnn.Begin()
+	tx, err = db.Begin()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -398,12 +367,7 @@ func adminHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func adminCsvHandler(w http.ResponseWriter, r *http.Request) {
-	cnn := <-cnnPool
-	defer func() {
-		cnnPool <- cnn
-	}()
-
-	rows, err := cnn.Query(`
+	rows, err := db.Query(`
         SELECT order_request.*, stock.seat_id, stock.variation_id, stock.updated_at                                                        
         FROM order_request JOIN stock ON order_request.id = stock.order_id
         ORDER BY order_request.id ASC`)
@@ -459,14 +423,10 @@ func adminCsvHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
-	cnnPool = make(chan *sql.DB, 10)
-	for i := 0; i < cap(cnnPool); i++ {
-		cnn, err := sql.Open("mysql", config.Db.String())
-		if err != nil {
-			log.Panic(err.Error())
-		}
-		cnnPool <- cnn
-		defer cnn.Close()
+	var err error
+	db, err = sql.Open("mysql", config.Db.String())
+	if err != nil {
+		log.Panic(err.Error())
 	}
 
 	for i, _ := range rowcol {
