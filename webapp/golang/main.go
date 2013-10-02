@@ -30,7 +30,8 @@ type DbConfig struct {
 
 func (db *DbConfig) String() string {
 	return fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s",
+		//		"%s:%s@tcp(%s:%d)/%s?tls=skip-verify&charset=utf8mb4,utf8",
+		"%s:%s@tcp(%s:%d)/%s?charset=utf8mb4,utf8",
 		db.UserName,
 		db.Password,
 		db.Host,
