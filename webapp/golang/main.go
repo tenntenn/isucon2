@@ -30,7 +30,6 @@ type DbConfig struct {
 
 func (db *DbConfig) String() string {
 	return fmt.Sprintf(
-		//		"%s:%s@tcp(%s:%d)/%s?tls=skip-verify&charset=utf8mb4,utf8",
 		"%s:%s@tcp(%s:%d)/%s?charset=utf8mb4,utf8",
 		db.UserName,
 		db.Password,
@@ -114,7 +113,8 @@ SELECT stock.seat_id, variation.name AS v_name, ticket.name AS t_name, artist.na
         JOIN artist ON ticket.artist_id = artist.id
         WHERE order_id IS NOT NULL
         ORDER BY order_id DESC LIMIT 10
-  `)
+    `)
+	defer rows.Close()
 	if err != nil {
 		log.Panic(err.Error())
 	}
@@ -143,6 +143,7 @@ SELECT stock.seat_id, variation.name AS v_name, ticket.name AS t_name, artist.na
 
 func topPageHandler(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query("SELECT * FROM artist")
+	defer rows.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -180,6 +181,7 @@ func artistHandler(w http.ResponseWriter, r *http.Request) {
 
 	var rows *sql.Rows
 	rows, err = db.Query("SELECT id, name FROM ticket WHERE artist_id = ?", artistId)
+	defer rows.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -347,6 +349,7 @@ func buyHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Panic(err.Error())
 	}
+	rows.Close()
 
 	tx.Commit()
 
